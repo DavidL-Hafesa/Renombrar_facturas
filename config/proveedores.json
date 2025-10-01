@@ -1,0 +1,44 @@
+{
+  "_comentario": "Mapeo de proveedores aprendidos. El sistema actualiza este archivo automáticamente.",
+  "_formato": "CIF o patrón único: {nombre, alias, etc}",
+  
+  "proveedores_por_cif": {
+    "A97050165": {
+      "nombre": "Q-SAFETY BY QUIRÓN PREVENCIÓN",
+      "alias": "Q-SAFETY",
+      "aprendido_de": "QS007322.pdf",
+      "fecha_aprendizaje": "2025-10-01"
+    },
+    "B04222402": {
+      "nombre": "B&G ALMERIA",
+      "alias": "BG_ALMERIA",
+      "aprendido_de": "FAA20250965.pdf",
+      "fecha_aprendizaje": "2025-10-01"
+    },
+    "34864979S": {
+      "nombre": "JUANA MARIA RODRIGUEZ MELLADO",
+      "alias": "QuimyH2",
+      "aprendido_de": "QUIMY H2 SERÓN.pdf",
+      "fecha_aprendizaje": "2025-10-01"
+    }
+  },
+  
+  "proveedores_por_patron": {
+    "CANDYCHOC": {
+      "nombre_completo": "CANDYCHOC S.A.",
+      "alias": "CANDYCHOC"
+    },
+    "IBERDROLA": {
+      "nombre_completo": "IBERDROLA ENERGÍA",
+      "alias": "IBERDROLA"
+    }
+  },
+  
+  "correcciones_ocr": {
+    "ALMERTÍA": "ALMERIA",
+    "ALMERT�A": "ALMERIA",
+    "B�G": "B&G",
+    "QUIRÓN": "QUIRON"
+  }
+}
+

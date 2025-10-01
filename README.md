@@ -96,12 +96,23 @@ Renombrar_facturas/
 
 ## 🛠️ Stack Tecnológico
 
-- **Python 3.8+**
+### Extracción de Datos (Doble estrategia):
+
+**Método 1: Azure Document Intelligence** (Recomendado - Precisión 95-98%)
+- **azure-ai-formrecognizer:** Cliente Python para Azure
+- **Modelo prebuilt-invoice:** Pre-entrenado para facturas
+- **Requiere:** Créditos Microsoft 365 (500 páginas/mes gratis)
+- [Ver guía de configuración](GUIA_RAPIDA_AZURE.md)
+
+**Método 2: OCR + Regex** (Fallback - Precisión 60-85%)
 - **pdfplumber / PyMuPDF:** Extracción de texto de PDFs
 - **Tesseract-OCR / pytesseract:** OCR para PDFs escaneados
 - **Pillow:** Procesamiento de imágenes
-- **python-dateutil:** Parsing de fechas
 - **regex:** Patrones de búsqueda avanzados
+
+### Procesamiento:
+- **python-dotenv:** Variables de entorno
+- **loguru:** Sistema de logs profesional
 
 ## 📋 Roadmap
 

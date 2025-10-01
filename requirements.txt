@@ -1,0 +1,40 @@
+# ============================================
+# Renombrar Facturas - Dependencias Python
+# ============================================
+
+# Procesamiento de PDFs
+pdfplumber==0.10.3
+PyMuPDF==1.23.8
+
+# OCR para PDFs escaneados e imágenes
+pytesseract==0.3.10
+pdf2image==1.16.3
+Pillow==10.1.0
+
+# Parsing y validación de datos
+python-dateutil==2.8.2
+regex==2023.10.3
+
+# Sistema de logs mejorado
+loguru==0.7.2
+
+# Variables de entorno
+python-dotenv==1.0.0
+
+# ============================================
+# Opcionales - Descomentar si son necesarias
+# ============================================
+
+# APIs de IA (para mejorar precisión si es necesario)
+# openai==1.3.7
+# anthropic==0.7.1
+
+# Procesamiento paralelo (para alto volumen)
+# joblib==1.3.2
+
+# Base de datos (para tracking avanzado)
+# sqlalchemy==2.0.23
+
+# Watchdog (para detectar archivos automáticamente)
+# watchdog==3.0.0
+

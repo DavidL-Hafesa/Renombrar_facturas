@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Entorno
+.env
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/*.log
+*.log
+
+# Datos (no subir facturas reales)
+data/input/*
+data/output/*
+data/errors/*
+!data/input/.gitkeep
+!data/output/.gitkeep
+!data/errors/.gitkeep
+!data/samples/
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Jupyter
+.ipynb_checkpoints/
+

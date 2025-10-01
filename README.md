@@ -136,8 +136,8 @@ Ver roadmap completo en [PLAN_HIBRIDO.md](PLAN_HIBRIDO.md)
 ## 📝 Documentación Adicional
 
 - [Plan Híbrido](PLAN_HIBRIDO.md) - Estrategia completa del proyecto
-- [Propuesta Técnica](Propuesta_Renombrar_Facturas.html) - Análisis inicial de soluciones
-- [Análisis Comparativo](Analisis_Comparativo.html) - Comparación M365 vs Python
+- [Propuesta Técnica](PROPUESTA.md) - Análisis inicial de soluciones
+- [Desarrollo Seguro](DESARROLLO_SEGURO.md) - Guía de buenas prácticas
 
 ## 📧 Contacto
 

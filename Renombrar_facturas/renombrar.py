@@ -83,6 +83,7 @@ def obtener_facturas_pendientes():
 def extraer_texto_pdf(ruta_pdf):
     """
     Extrae texto de un archivo PDF.
+    Intenta primero extracción directa, luego OCR si es necesario.
     
     Args:
         ruta_pdf (Path): Ruta al archivo PDF
@@ -96,6 +97,7 @@ def extraer_texto_pdf(ruta_pdf):
         
         logger.debug(f"📄 Extrayendo texto de: {ruta_pdf.name}")
         
+        # Intento 1: Extracción directa de texto
         with pdfplumber.open(ruta_pdf) as pdf:
             texto = ""
             
@@ -105,14 +107,78 @@ def extraer_texto_pdf(ruta_pdf):
                     texto += texto_pagina + "\n"
             
             if texto.strip():
-                logger.debug(f"   ✓ Extraídos {len(texto)} caracteres")
+                logger.debug(f"   ✓ Extraídos {len(texto)} caracteres (texto nativo)")
                 return texto
             else:
-                logger.warning(f"   ⚠️ PDF sin texto extraíble (posiblemente escaneado)")
-                return None
+                logger.warning(f"   ⚠️ PDF sin texto extraíble - intentando OCR...")
+                # Intento 2: OCR si no hay texto
+                return extraer_texto_pdf_con_ocr(ruta_pdf)
                 
     except Exception as e:
         logger.error(f"   ❌ Error extrayendo texto: {e}")
+        return None
+
+
+def extraer_texto_pdf_con_ocr(ruta_pdf):
+    """
+    Extrae texto de un PDF escaneado usando OCR.
+    Convierte el PDF a imágenes con PyMuPDF y aplica Tesseract.
+    
+    Args:
+        ruta_pdf (Path): Ruta al archivo PDF
+        
+    Returns:
+        str: Texto extraído o None si falla
+    """
+    
+    try:
+        import fitz  # PyMuPDF
+        import pytesseract
+        from PIL import Image
+        import io
+        from config.settings import TESSERACT_PATH
+        
+        # Configurar Tesseract
+        if Path(TESSERACT_PATH).exists():
+            pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+        
+        logger.debug(f"   🔍 Aplicando OCR al PDF...")
+        
+        # Abrir PDF con PyMuPDF
+        doc = fitz.open(ruta_pdf)
+        num_paginas = len(doc)
+        texto_completo = ""
+        
+        for num_pagina in range(num_paginas):
+            logger.debug(f"   📄 OCR en página {num_pagina + 1}/{num_paginas}")
+            
+            # Convertir página a imagen
+            pagina = doc[num_pagina]
+            pix = pagina.get_pixmap(dpi=300)  # Alta resolución para mejor OCR
+            
+            # Convertir a PIL Image
+            img_data = pix.tobytes("png")
+            imagen = Image.open(io.BytesIO(img_data))
+            
+            # Aplicar OCR
+            texto_pagina = pytesseract.image_to_string(imagen, lang='spa')
+            texto_completo += texto_pagina + "\n"
+        
+        doc.close()
+        
+        if texto_completo.strip():
+            logger.success(f"   ✓ OCR extrajo {len(texto_completo)} caracteres de {num_paginas} páginas")
+            return texto_completo
+        else:
+            logger.error(f"   ❌ OCR no pudo extraer texto")
+            return None
+            
+    except ImportError as e:
+        logger.error(f"   ❌ Librería no instalada: {e}")
+        logger.error(f"   💡 Instala con: pip install PyMuPDF pytesseract")
+        return None
+    except Exception as e:
+        logger.error(f"   ❌ Error en OCR: {e}")
         return None
 
 
@@ -190,13 +256,10 @@ def parsear_factura(texto, nombre_archivo):
         dict: Diccionario con fecha, proveedor, numero o None si falla
     """
     
-    # TODO: Implementar parseo inteligente
-    # Por ahora retornamos valores de ejemplo
+    import re
+    from datetime import datetime
     
     logger.debug(f"🔍 Parseando información de la factura...")
-    
-    # Aquí irá la lógica de regex, IA, etc.
-    # Por ahora, placeholder
     
     info = {
         'fecha': None,
@@ -205,10 +268,83 @@ def parsear_factura(texto, nombre_archivo):
         'original': nombre_archivo
     }
     
-    # TODO: Implementar extracción real
-    logger.warning("   ⚠️ Parseo aún no implementado - retornando None")
+    # Normalizar texto (remover saltos de línea múltiples, espacios extra)
+    texto_limpio = re.sub(r'\s+', ' ', texto)
     
-    return None  # Por ahora retorna None hasta implementar
+    # 1. EXTRAER FECHA
+    # Patrones comunes: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY, etc.
+    patrones_fecha = [
+        r'Fecha[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})',  # Fecha: 15/09/2024
+        r'Date[:\s]+(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})',   # Date: 15/09/2024
+        r'(\d{1,2}[/-]\d{1,2}[/-]\d{4})',                # 15/09/2024 (genérico)
+    ]
+    
+    for patron in patrones_fecha:
+        match = re.search(patron, texto, re.IGNORECASE)
+        if match:
+            fecha_str = match.group(1)
+            try:
+                # Intentar parsear la fecha
+                for formato in ['%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y', '%d/%m/%y']:
+                    try:
+                        fecha_obj = datetime.strptime(fecha_str, formato)
+                        info['fecha'] = fecha_obj.strftime('%Y%m%d')  # YYYYMMDD
+                        logger.debug(f"   ✓ Fecha encontrada: {fecha_str} → {info['fecha']}")
+                        break
+                    except:
+                        continue
+                if info['fecha']:
+                    break
+            except Exception as e:
+                logger.debug(f"   ⚠️ Error parseando fecha: {e}")
+    
+    # 2. EXTRAER PROVEEDOR
+    patrones_proveedor = [
+        r'Proveedor[:\s]+([A-ZÁÉÍÓÚÑa-záéíóúñ\s]+?)(?:\n|Número|N[úu]mero|Fecha|Importe)',
+        r'Supplier[:\s]+([A-Za-z\s]+?)(?:\n|Number|Date|Amount)',
+        r'Razón Social[:\s]+([A-ZÁÉÍÓÚÑa-záéíóúñ\s]+?)(?:\n|NIF|CIF)',
+    ]
+    
+    for patron in patrones_proveedor:
+        match = re.search(patron, texto, re.IGNORECASE)
+        if match:
+            proveedor = match.group(1).strip()
+            # Limpiar nombre del proveedor (remover espacios extra, etc.)
+            proveedor = re.sub(r'\s+', '_', proveedor)  # Espacios → guiones bajos
+            proveedor = re.sub(r'[^\w\s-]', '', proveedor)  # Remover caracteres especiales
+            info['proveedor'] = proveedor
+            logger.debug(f"   ✓ Proveedor encontrado: {proveedor}")
+            break
+    
+    # 3. EXTRAER NÚMERO DE FACTURA
+    patrones_numero = [
+        r'N[úu]mero de Factura[:\s]+([A-Z0-9\-/]+)',
+        r'Factura N[º°][:\s]+([A-Z0-9\-/]+)',
+        r'Invoice Number[:\s]+([A-Z0-9\-/]+)',
+        r'N[º°] Factura[:\s]+([A-Z0-9\-/]+)',
+        r'Factura[:\s]+([A-Z0-9\-/]+)',
+    ]
+    
+    for patron in patrones_numero:
+        match = re.search(patron, texto, re.IGNORECASE)
+        if match:
+            numero = match.group(1).strip()
+            info['numero'] = numero
+            logger.debug(f"   ✓ Número encontrado: {numero}")
+            break
+    
+    # Validar que al menos tengamos 2 de los 3 campos
+    campos_encontrados = sum([bool(info['fecha']), bool(info['proveedor']), bool(info['numero'])])
+    
+    if campos_encontrados >= 2:
+        logger.success(f"   ✓ Parseo exitoso: {campos_encontrados}/3 campos extraídos")
+        return info
+    else:
+        logger.warning(f"   ⚠️ Parseo incompleto: solo {campos_encontrados}/3 campos")
+        logger.debug(f"      Fecha: {info['fecha']}")
+        logger.debug(f"      Proveedor: {info['proveedor']}")
+        logger.debug(f"      Número: {info['numero']}")
+        return None
 
 
 def generar_nuevo_nombre(info):
